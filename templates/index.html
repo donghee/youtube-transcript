@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcript</title>
+</head>
+<body>
+    <h1>YouTube Transcript and Translate</h1>
+    <form method="POST">
+      <span> Youtube URL: </span>
+        <input type="text" name="url" placeholder="YouTube URL 입력">
+        <input type="submit" value="Transcribe">
+    </form>
+
+    <br/> <br/> <br/>
+    {% if videos %}
+    <table>
+        {% for video in videos %}
+        <tr>
+            <td><img src="{{ video.image }}" alt="{{ video.title }}" width="100"></td>
+            <td><a href="{{ video.url }}">{{ video.title }}</a></td>
+            <td><a href="{{ video.transcript }}">transcript</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+</body>
+</html>
+
