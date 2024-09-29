@@ -88,17 +88,17 @@ def youtube_title(video_id):
 def youtube_transcript(URL, audio_only=False):
     paragraphs = []
 
-    #  ydl_opts = { 'outtmpl': '%(id)s.%(ext)s', 'paths': {"home": save_path}, 'writesubtitles': True }
-    ydl_opts = {
-        'outtmpl': '%(id)s.%(ext)s',
-        'paths': {"home": save_path},
-        'writesubtitles': True,
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-        'postprocessors': [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',
-        }],
-    }
+    ydl_opts = { 'outtmpl': '%(id)s.%(ext)s', 'paths': {"home": save_path}, 'writesubtitles': True }
+    #  ydl_opts = {
+    #      'outtmpl': '%(id)s.%(ext)s',
+    #      'paths': {"home": save_path},
+    #      'writesubtitles': True,
+    #      'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+    #      'postprocessors': [{
+    #          'key': 'FFmpegVideoConvertor',
+    #          'preferedformat': 'mp4',
+    #      }],
+    #  }
 
     if audio_only:
         ydl_opts = audio_only_ydl_opts
@@ -148,25 +148,30 @@ def youtube_transcript(URL, audio_only=False):
         paragraphs = chunk_text_to_paragraphs_semantic(transcript.text)
         # print("\nParagraphs:")
         # print(paragraphs)
-    
+
+        video_src = os.path.basename(filename)
+        en_vtt_src = os.path.basename(en_vtt_filename)
+        ko_vtt_src = os.path.basename(ko_vtt_filename)
         if not audio_only:
-            write_video_html(title, filename, en_vtt_filename, ko_vtt_filename)
+            write_video_html(title, video_src, en_vtt_src, ko_vtt_src)
             os.system(f"mkdir -p {save_path}/{vid}")
             os.system(f"cp {save_path}/{vid}* {save_path}/{vid}")
             os.system(f"cp {save_path}/index.html {save_path}/{vid}")
+
+        # for ios playable video, convert to mp4
+        base_filename = filename.split(".")[0]
+        video_converting_cmd = f"ffmpeg -y -hide_banner -i {filename} -c:v libx264 -preset veryfast -crf 22 -movflags +faststart -c:a aac -b:a 192k -pix_fmt yuv420p {base_filename}_converted.mp4"
+        os.system(video_converting_cmd)
+        os.system(f"mv {base_filename}_converted.mp4 {save_path}/{vid}/{video_src}")
 
         print(f"Transcript saved to {save_path}/{vid}_transcript.txt")
         print(f"Video saved to {save_path}/{vid}")
 
     return paragraphs
 
-def write_video_html(title, video_path, en_vtt_path, ko_vtt_path):
-    video_filename = os.path.basename(video_path)
-    en_vtt_filename = os.path.basename(en_vtt_path)
-    ko_vtt_filename = os.path.basename(ko_vtt_path)
-
+def write_video_html(title, video_src, en_vtt_src, ko_vtt_src):
     # download from youtube
-    original_vtt_filename = video_filename.replace("mp4", "en")+ ".vtt"
+    original_vtt_src = video_src.replace("mp4", "en")+ ".vtt"
 
     html = f"""
         <!DOCTYPE html>
@@ -186,7 +191,7 @@ def write_video_html(title, video_path, en_vtt_path, ko_vtt_path):
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-6 text-center">{title}</h1>
         <div class="max-w-3xl mx-auto">
-            <video
+            <video class="video-js vjs-default-skin vjs-16-9"
                 id="my-video"
                 class="video-js vjs-big-play-centered"
                 controls
@@ -195,10 +200,10 @@ def write_video_html(title, video_path, en_vtt_path, ko_vtt_path):
                 height="360"
                 data-setup=""
             >
-                <source src="{video_filename}" type="video/mp4" />
-                <track kind="subtitles" src="{original_vtt_filename}" srclang="en" label="Origin Subtitle">
-                <track kind="subtitles" src="{en_vtt_filename}" srclang="en" label="English">
-                <track kind="subtitles" src="{ko_vtt_filename}" srclang="ko" label="한국어" default>
+                <source src="{video_src}" type="video/mp4" />
+                <track kind="subtitles" src="{original_vtt_src}" srclang="en" label="Origin Subtitle">
+                <track kind="subtitles" src="{en_vtt_src}" srclang="en" label="English">
+                <track kind="subtitles" src="{ko_vtt_src}" srclang="ko" label="한국어" default>
             </video>
         </div>
     </div>
