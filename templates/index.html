@@ -4,14 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Transcript</title>
+    <style>
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.3);
+            border-radius: 50%;
+            border-top-color: #000;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
     <h1>YouTube Transcript and Translate</h1>
-    <form method="POST">
+    <form method="POST" id="transcript-form">
       <span> Youtube URL: </span>
         <input type="text" name="url" placeholder="YouTube URL 입력">
         <input type="submit" value="Transcribe">
     </form>
+    <div id="loading" class="loading" style="display: none;"></div>
 
     <br/> <br/> <br/>
     {% if videos %}
@@ -26,6 +41,11 @@
     </table>
     {% endif %}
 
+    <script>
+        document.getElementById('transcript-form').addEventListener('submit', function(e) {
+            document.getElementById('loading').style.display = 'inline-block';
+        });
+    </script>
 </body>
 </html>
 
