@@ -1,4 +1,4 @@
-from trans_youtube import youtube_transcript, youtube_title
+from trans_youtube import youtube_transcript, youtube_title2
 from flask import Flask, render_template, request, redirect, url_for
 import os
 
@@ -16,7 +16,7 @@ def index():
 
     videos = []
     for video_id in video_dirs:
-        title = youtube_title(video_id)
+        title = youtube_title2(video_id)
         transcript = os.path.join(static_folder, video_id, f'{video_id}_transcript.txt')
         videos.append({'image': f'https://img.youtube.com/vi/{video_id}/maxresdefault.jpg', 'title': title,
                       'url': f'/{static_folder}/{video_id}/index.html', 'transcript': transcript})

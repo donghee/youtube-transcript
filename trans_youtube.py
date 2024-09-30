@@ -85,6 +85,14 @@ def youtube_title(video_id):
         title = ydl.extract_info(video_id, download=False).get('title', None)
     return title
 
+def youtube_title2(video_id):
+    transcript = os.path.join(save_path, video_id, f'{video_id}_transcript.txt')
+    if os.path.exists(transcript):
+        # return first line of the transcript
+        with open(transcript, 'r') as f:
+            return f.readline().split(' - ')[0]
+    return ""
+
 def youtube_transcript(URL, audio_only=False):
     paragraphs = []
 
@@ -201,8 +209,8 @@ def write_video_html(title, video_src, en_vtt_src, ko_vtt_src):
                 data-setup=""
             >
                 <source src="{video_src}" type="video/mp4" />
-                <track kind="subtitles" src="{original_vtt_src}" srclang="en" label="Origin Subtitle">
-                <track kind="subtitles" src="{en_vtt_src}" srclang="en" label="English">
+                <track kind="subtitles" src="{original_vtt_src}" srclang="en" label="Subtitle From Youtube">
+                <track kind="subtitles" src="{en_vtt_src}" srclang="en" label="Orginal">
                 <track kind="subtitles" src="{ko_vtt_src}" srclang="ko" label="한국어" default>
             </video>
         </div>
