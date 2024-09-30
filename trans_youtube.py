@@ -58,9 +58,8 @@ def translate_vtt(vtt):
     # Claude API를 이용하여 vtt 파일을 한국어로 번역된 vtt 파일로 변환
     client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-    # make vtt one element per 70 lines
-    # TODO: optimize best request line size to ???
-    request_line_size = 70
+    # TODO: optimize best request line size
+    request_line_size = 65
     vtts = []
     lines = vtt.split("\n")
     for i in range(0, len(lines), request_line_size):
@@ -97,16 +96,6 @@ def youtube_transcript(URL, audio_only=False):
     paragraphs = []
 
     ydl_opts = { 'outtmpl': '%(id)s.%(ext)s', 'paths': {"home": save_path}, 'writesubtitles': True }
-    #  ydl_opts = {
-    #      'outtmpl': '%(id)s.%(ext)s',
-    #      'paths': {"home": save_path},
-    #      'writesubtitles': True,
-    #      'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-    #      'postprocessors': [{
-    #          'key': 'FFmpegVideoConvertor',
-    #          'preferedformat': 'mp4',
-    #      }],
-    #  }
 
     if audio_only:
         ydl_opts = audio_only_ydl_opts

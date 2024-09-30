@@ -7,8 +7,8 @@
     <style>
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
+            width: 14px;
+            height: 14px;
             border: 3px solid rgba(0,0,0,.3);
             border-radius: 50%;
             border-top-color: #000;
@@ -26,9 +26,15 @@
         <input type="text" name="url" placeholder="YouTube URL 입력">
         <input type="submit" value="Transcribe">
     </form>
-    <div id="loading" class="loading" style="display: none;"></div>
+    <br/>
+    {% if jobs_status %}
+      <div id="jobs-status" class="mt-2" >
+        <span id="loading" class="loading"></span>
+        <span> {{ jobs_status }} <span>
+      </div>
+    {% endif %}
+    <br/>
 
-    <br/> <br/> <br/>
     {% if videos %}
     <table>
         {% for video in videos %}
@@ -41,11 +47,6 @@
     </table>
     {% endif %}
 
-    <script>
-        document.getElementById('transcript-form').addEventListener('submit', function(e) {
-            document.getElementById('loading').style.display = 'inline-block';
-        });
-    </script>
 </body>
 </html>
 
