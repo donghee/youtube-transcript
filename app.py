@@ -31,9 +31,10 @@ scheduler.add_listener(scheduler_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR 
 def index():
     if request.method == 'POST':
         url = request.form['url']
-        language = request.form['language']
+        language_code = request.form['language']
         #  youtube_transcript(url, audio_only=False)
-        job = scheduler.add_job(func=generate_transcript_page, args=(url,), kwargs={'audio_only': False, 'language': language}, id=url)
+        job = scheduler.add_job(func=generate_transcript_page, args=(url,), kwargs={'audio_only': False,
+                                                                                    'language_code': language_code}, id=url)
         jobs_status[url] = {'status': 'Processing...', 'args': url, 'msg': ''}
         return redirect(url_for('index'))
     

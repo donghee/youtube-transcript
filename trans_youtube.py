@@ -18,7 +18,8 @@ target_languages = {
     "en": "영어",
     "vi": "베트남어",
     "es": "스페인어",
-    "ja": "일본어"
+    "ja": "일본어",
+    "zh": "중국어",
 }
 
 def chunk_text_to_paragraphs_semantic(text):
@@ -26,7 +27,7 @@ def chunk_text_to_paragraphs_semantic(text):
     chunker = TextChunker(maxlen=1000)
     return [ chunk for chunk in chunker.chunk(text) ]
 
-def translate(paragraphs):
+def translate_ko(paragraphs):
     # Claude API를 사용하여 한국어로 번역
     client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
     messages = []
@@ -50,18 +51,18 @@ def translate(paragraphs):
         print(message["content"])
         print('---')
 
-def translate_vtt(vtt, language="ko"):
+def translate_vtt(vtt, language_code="ko"):
     # Claude API를 이용하여 vtt 파일을 타겟 언어로 번역된 vtt 파일로 변환
     client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
     # TODO: optimize best request line size
-    line_size_one_request = int(66/3)
+    lines_per_request = int(66/3)
     vtts = []
     lines = vtt.split("\n\n")
-    for i in range(0, len(lines), line_size_one_request):
-        vtts.append("\n\n".join(lines[i:i+line_size_one_request]))
+    for i in range(0, len(lines), lines_per_request):
+        vtts.append("\n\n".join(lines[i:i+lines_per_request]))
 
-    target_language = target_languages.get(language, "한국어")
+    target_language = target_languages.get(language_code)
     print(f"Translate to {target_language}...")
 
     translated_vtts = []
@@ -144,7 +145,7 @@ def youtube_transcript(URL):
 
     return transcript
 
-def save_transcript(transcript, vid, title, language):
+def save_transcript(transcript, vid, title, language_code):
     # save the transcript to a file
     transcript_filename = f"{save_path}/{vid}_transcript.txt"
     with open(transcript_filename, "w") as f:
@@ -153,14 +154,15 @@ def save_transcript(transcript, vid, title, language):
 
     # save the transcript to a vtt file
     vtt = transcript.export_subtitles_vtt()
-    transcript_vtt_filename = f"{save_path}/{vid}.en.vtt"
+    original_language_code = transcript.json_response['language_code']
+    transcript_vtt_filename = f"{save_path}/{vid}.{original_language_code}.vtt"
     with open(transcript_vtt_filename, "w") as f:
         f.write(vtt)
 
-    translated_vtts = translate_vtt(vtt, language)
-    print(f"{language} translation:")
+    translated_vtts = translate_vtt(vtt, language_code)
+    print(f"{language_code} translation:")
     print(f"translated subtitle lines: {len(translated_vtts)}")
-    translated_vtt_filename = f"{save_path}/{vid}.{language}.vtt"
+    translated_vtt_filename = f"{save_path}/{vid}.{language_code}.vtt"
     with open(translated_vtt_filename, "w") as f:
         f.write("\n".join(translated_vtts))
 
@@ -179,7 +181,7 @@ def save_transcript(transcript, vid, title, language):
 
     return transcript_filename, transcript_vtt_filename, translated_vtt_filename
 
-def generate_html(vid, title, transcript_filename, transcript_vtt, translated_vtt, language="ko"):
+def generate_html(vid, title, transcript_filename, transcript_vtt, translated_vtt):
     video_src = f"{vid}.mp4"
     transcript_vtt_src = os.path.basename(transcript_vtt)
     translated_vtt_src = os.path.basename(translated_vtt)
@@ -188,7 +190,7 @@ def generate_html(vid, title, transcript_filename, transcript_vtt, translated_vt
     with open(transcript_filename, "r") as f:
         transcript = f.read()
 
-    write_video_html(title, video_src, transcript_vtt_src, translated_vtt_src, transcript, language)
+    write_video_html(title, video_src, transcript_vtt_src, translated_vtt_src, transcript)
 
     os.system(f"mkdir -p {save_path}/{vid}")
     os.system(f"cp {save_path}/{vid}* {save_path}/{vid}")
@@ -216,10 +218,14 @@ def save_video(URL):
 
         print(f"Video saved to {save_path}/{vid}")
 
-def write_video_html(title, video_src, transcript_vtt_src, translated_vtt_src, transcript, language):
+def write_video_html(title, video_src, transcript_vtt_src, translated_vtt_src, transcript):
     # download from youtube
-    youtube_vtt_src = video_src.replace("mp4", "en")+ ".vtt"
-    target_language = target_languages.get(language, "한국어")
+    youtube_vtt_src = video_src.replace("mp4", "vtt")
+
+    original_language_code = transcript_vtt_src.split(".")[-2]
+    original_language = target_languages.get(original_language_code)
+    language_code = translated_vtt_src.split(".")[-2]
+    target_language = target_languages.get(language_code)
 
     html = f"""
         <!DOCTYPE html>
@@ -249,19 +255,19 @@ def write_video_html(title, video_src, transcript_vtt_src, translated_vtt_src, t
                 data-setup=""
             >
                 <source src="{video_src}" type="video/mp4" />
-                <track kind="subtitles" src="{youtube_vtt_src}" srclang="en" label="Subtitle From Youtube">
-                <track kind="subtitles" src="{transcript_vtt_src}" srclang="en" label="Orginal">
-                <track kind="subtitles" src="{translated_vtt_src}" srclang="{language}" label="{target_language}" default>
+                <track kind="subtitles" src="{youtube_vtt_src}" label="From Youtube">
+                <track kind="subtitles" src="{transcript_vtt_src}" srclang="{original_language_code}" label="{original_language}">
+                <track kind="subtitles" src="{translated_vtt_src}" srclang="{language_code}" label="{target_language}" default>
             </video>
         </div>
         <div class="mt-10 max-w-3xl mx-auto">
             <p>
             From: https://www.youtube.com/watch?v={video_src.split('.')[0]}
             </p>
-            <span> 자막 파일: </span>
-            <a class="underline" href="{transcript_vtt_src}">Original Subtitle File </a> 
+            <span> Subtitle File: </span>
+            <a class="underline" href="{transcript_vtt_src}">{original_language}</a> 
             <span> , </span>
-            <a class="underline" href="{translated_vtt_src}">{target_language} Subtitle File </a>
+            <a class="underline" href="{translated_vtt_src}">{target_language}</a>
         </div>
         <div class="mt-10 max-w-3xl mx-auto">
             <h2 class="text-2xl font-bold mb-4">Transcript</h2>
@@ -278,11 +284,11 @@ def write_video_html(title, video_src, transcript_vtt_src, translated_vtt_src, t
     with open(f"{save_path}/index.html", "w") as f:
         f.write(html)
 
-def generate_transcript_page(URL, audio_only=False, language="ko"):
+def generate_transcript_page(URL, audio_only=False, language_code="ko"):
     transcript = youtube_transcript(URL)
     vid, title = youtube_info(URL)
-    transcript_filename, transcript_vtt_filename, translated_vtt_filename = save_transcript(transcript, vid, title, language)
-    generate_html(vid, title, transcript_filename, transcript_vtt_filename, translated_vtt_filename, language)
+    transcript_filename, transcript_vtt_filename, translated_vtt_filename = save_transcript(transcript, vid, title, language_code)
+    generate_html(vid, title, transcript_filename, transcript_vtt_filename, translated_vtt_filename)
     save_video(URL)
 
 if __name__ == "__main__":
