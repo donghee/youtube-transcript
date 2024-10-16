@@ -155,14 +155,14 @@ def save_transcript(transcript, vid, title, language_code):
     # save the transcript to a vtt file
     vtt = transcript.export_subtitles_vtt()
     original_language_code = transcript.json_response['language_code']
-    transcript_vtt_filename = f"{save_path}/{vid}.{original_language_code}.vtt"
+    transcript_vtt_filename = f"{save_path}/{vid}_transcript.{original_language_code}.vtt"
     with open(transcript_vtt_filename, "w") as f:
         f.write(vtt)
 
     translated_vtts = translate_vtt(vtt, language_code)
     print(f"{language_code} translation:")
     print(f"translated subtitle lines: {len(translated_vtts)}")
-    translated_vtt_filename = f"{save_path}/{vid}.{language_code}.vtt"
+    translated_vtt_filename = f"{save_path}/{vid}_translated.{language_code}.vtt"
     with open(translated_vtt_filename, "w") as f:
         f.write("\n".join(translated_vtts))
 
@@ -220,12 +220,14 @@ def save_video(URL):
 
 def write_video_html(title, video_src, transcript_vtt_src, translated_vtt_src, transcript):
     # download from youtube
-    youtube_vtt_src = video_src.replace("mp4", "vtt")
-
     original_language_code = transcript_vtt_src.split(".")[-2]
     original_language = target_languages.get(original_language_code)
     language_code = translated_vtt_src.split(".")[-2]
     target_language = target_languages.get(language_code)
+
+    # TODO use youtube vtt file info not using original_language_code
+    youtube_vtt_src = video_src.replace("mp4", original_language_code + ".vtt")
+    youtube_video_id = video_src.split(".")[0]
 
     html = f"""
         <!DOCTYPE html>
@@ -261,9 +263,12 @@ def write_video_html(title, video_src, transcript_vtt_src, translated_vtt_src, t
             </video>
         </div>
         <div class="mt-10 max-w-3xl mx-auto">
-            <p>
-            From: https://www.youtube.com/watch?v={video_src.split('.')[0]}
+            <div class="flex">
+            <p class="mr-2">
+            From: https://www.youtube.com/watch?v={youtube_video_id}
             </p>
+            <button class="text-sm border-solid hover:bg-gray-200 active:bg-gray-600 active:text-white border-2 p-1" onclick="navigator.clipboard.writeText('https://www.youtube.com/watch?v={youtube_video_id}')">Copy</button>
+            </div>
             <span> Subtitle File: </span>
             <a class="underline" href="{transcript_vtt_src}">{original_language}</a> 
             <span> , </span>
