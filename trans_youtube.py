@@ -8,6 +8,7 @@ import assemblyai as aai
 import os
 import yt_dlp
 from tqdm import tqdm
+import re
 
 #  save_path = "/tmp"
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -166,6 +167,19 @@ def save_transcript(transcript, vid, title, language_code):
     with open(translated_vtt_filename, "w") as f:
         f.write("\n".join(translated_vtts))
 
+    # save the translated transcript to a file
+    translated_filename = f"{save_path}/{vid}_translated.txt"
+    with open(translated_filename, "w") as f:
+        f.write(f"{title} - https://www.youtube.com/watch?v={vid}\n\n")
+        for translated_vtt in translated_vtts:
+            # replace the timestamp with a blank line
+            _ = re.sub(r"\d{2}:\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}:\d{2}.\d{3}", "", translated_vtt)
+            _ = re.sub(r"\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}.\d{3}", "", _)
+            _ = re.sub("\n\n", "", _)
+            _ = re.sub("\n", " ", _)
+            translated_vtt = re.sub("WEBVTT", "", _)
+            f.write(translated_vtt.lstrip())
+
     # copy the transcript to the clipboard
     #  if os.system("which /usr/bin/xclip > /dev/null 2>&1") == 0: # linux
     #      print("Transcript copied to clipboard")
@@ -295,6 +309,7 @@ def generate_transcript_page(URL, audio_only=False, language_code="ko"):
     transcript_filename, transcript_vtt_filename, translated_vtt_filename = save_transcript(transcript, vid, title, language_code)
     generate_html(vid, title, transcript_filename, transcript_vtt_filename, translated_vtt_filename)
     save_video(URL)
+    return vid, title, transcript_filename, transcript_vtt_filename, translated_vtt_filename
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Transcribe and translate a YouTube video')

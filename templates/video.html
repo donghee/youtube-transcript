@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>번역: {{ title }}</title>
+    <!-- video.js CSS -->
+    <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- video.js JavaScript -->
+    <script src="https://vjs.zencdn.net/8.16.1/video.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-md mb-4">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between">
+                <div class="flex space-x-7">
+                    <div>
+                        <a href="/" class="flex items-center py-4 px-2">
+                            <span class="font-semibold text-gray-500 text-lg">Transcript Youtube</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-2 py-8">
+        <h1 class="text-3xl font-bold mb-6 text-center">{{ title }}</h1>
+        <div class="max-w-3xl mx-auto">
+            <video class="video-js vjs-default-skin vjs-16-9"
+                id="my-video"
+                class="video-js vjs-big-play-centered"
+                controls
+                preload="auto"
+                width="640"
+                height="360"
+                data-setup=""
+            >
+                <source src="{{ video_src }}" type="video/mp4" />
+                <track kind="subtitles" src="{{ youtube_vtt_src }}" label="From Youtube">
+                {% for vtt in vtts %}
+                  <track kind="subtitles" src="{{ vtt.src }}" srclang="{{ vtt.srclang }}" label="{{ vtt.language }}"
+                    {% if vtt.srclang == 'ko' %} 
+                    default
+                    {% endif %}
+                  > 
+                {% endfor %}
+            </video>
+        </div>
+        <div class="mt-10 max-w-3xl mx-auto">
+            <div class="flex">
+            <p class="mr-2">
+            From: https://www.youtube.com/watch?v={{ youtube_video_id }}
+            </p>
+            <button class="text-sm border-solid hover:bg-gray-200 active:bg-gray-600 active:text-white border-2 p-1" onclick="navigator.clipboard.writeText('https://www.youtube.com/watch?v={{ youtube_video_id }}')">Copy</button>
+            </div>
+            <span> Subtitle File: </span>
+            {% for vtt in vtts %}
+            <a class="underline" href="{{ vtt.src }}">{{ vtt.language }}</a> 
+              {% if not loop.last %}
+              <span>, </span>
+              {% endif %}
+            {% endfor %}
+        </div>
+      <div class="mt-10 max-w-3xl mx-auto flex flex-wrap">
+        <input id="tab-one" type="radio" name="tabs" class="peer/tab-one opacity-0 absolute" checked />
+        <label for="tab-one" class="text-xl peer-checked/tab-one:font-bold hover:bg-slate-100 peer-checked/tab-one:bg-white cursor-default p-4 rounded-t-lg block">
+          Transcript
+        </label>
+        <input id="tab-two" type="radio" name="tabs" class="peer/tab-two opacity-0 absolute" />
+        <label for="tab-two" class="text-xl peer-checked/tab-two:font-bold hover:bg-slate-100 peer-checked/tab-two:bg-white cursor-default p-4 rounded-t-lg block">
+          Translation
+        </label>
+
+        <div class="basic-full h-0"></div>
+
+        <div class="bg-white hidden peer-checked/tab-one:block p-4 rounded-lg shadow-md w-full">
+          <pre class="whitespace-pre-wrap">
+{{ transcript }}
+          </pre>
+        </div>
+        <div class="bg-white hidden peer-checked/tab-two:block p-4 rounded-lg shadow-md w-full">
+          <pre class="whitespace-pre-wrap">
+{{ translated }}
+          </pre>
+        </div>
+      </div>
+
+    </div>
+</body>
+</html>
