@@ -17,13 +17,45 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+      .pagination > li {
+        display: inline-block;
+      }
+
+      .page-link {
+          padding: .6em;
+          font-size: 16px;
+      }
+
+      .page-item.active {
+          color: black;
+          text-decoration-line: underline;
+          text-decoration-style : dotted;
+          font-weight: bolder;
+      }
+
+
+      .pagination-page-info {
+          padding: .6em;
+          padding-left: 0;
+          width: 40em;
+          margin: .5em;
+          margin-left: 0;
+          font-size: 12px;
+      }
+
+      .pagination-page-info b {
+          color: black;
+          padding-left: 2px;
+          padding: .1em .25em;
+      }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body>
     <nav class="bg-white shadow-md mb-4">
-        <div class="max-w-6xl mx-auto px-4">
+        <div class="max-w-3xl mx-auto px-2">
             <div class="flex justify-between">
                 <div class="flex space-x-7">
                     <div>
@@ -38,6 +70,7 @@
 
     <div class="container mx-auto px-2 py-8">
 
+        <div class="max-w-3xl mx-auto">
     <h2 class="text-lg mb-2 font-semibold">YouTube Transcript and Translation</h2>
 
     <form method="POST" id="transcript-form">
@@ -50,7 +83,7 @@
         <option value="ja">일본어</option>
         <option value="zh">중국어</option>
       </select>
-        <input class="m-1 p-1 border" type="submit" value="Transcribe">
+        <input class="m-1 p-1 hover:bg-gray-200 active:bg-gray-600 active:text-white  border rounded" type="submit" value="Transcribe">
     </form>
 
     <br/>
@@ -91,6 +124,14 @@
     </table>
     {% endif %}
 
+    <div class="mt-4">
+        {% if pagination %}
+          {{ pagination.info }}
+          {{ pagination.links }}
+        {% endif %}
+    </div>
+
+    </div>
     </div>
 </body>
 </html>

@@ -1,7 +1,9 @@
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, EVENT_JOB_ADDED
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, render_template, request, redirect, url_for
+from flask_paginate import Pagination, get_page_parameter
 from trans_youtube import generate_transcript_page, youtube_title2, target_languages
+from pathlib import Path
 import os
 import re
 
@@ -34,14 +36,17 @@ def index():
         url = request.form['url']
         language_code = request.form['language']
         #  youtube_transcript(url, audio_only=False)
+        if url is None or url == '':
+            return redirect(url_for('index'))
         job = scheduler.add_job(func=generate_transcript_page, args=(url,), kwargs={'audio_only': False, 'language_code': language_code}, id=url)
         jobs_status[url] = {'status': 'Processing...', 'args': url, 'msg': ''}
         return redirect(url_for('index'))
     
-    video_dirs = [d for d in os.listdir(static_folder) if os.path.isdir(os.path.join(static_folder, d))]
+    video_dirs = sorted([x for x in Path(static_folder).iterdir() if x.is_dir()], key=os.path.getmtime, reverse=True)
 
     videos = []
-    for video_id in video_dirs:
+    for video in video_dirs:
+        video_id = video.name
         title = youtube_title2(video_id)
         transcript = os.path.join(static_folder, video_id, f'{video_id}_transcript.txt')
         translation = os.path.join(static_folder, video_id, f'{video_id}_translated.txt')
@@ -50,7 +55,14 @@ def index():
 
     jobs_status_ = ', '.join([f'{v["status"]} {v["msg"]} {v["args"]}' for k, v in jobs_status.items()])
 
-    return render_template('index.html', videos=videos, jobs_status=jobs_status_)
+    page = request.args.get(get_page_parameter(), type=int, default=1)
+    per_page = 10
+    offset = (page - 1) * per_page
+    total = len(videos)
+    paginated_videos = videos[offset:offset + per_page]
+    pagination = Pagination(page=page, total=total, per_page=per_page)
+
+    return render_template('index.html', videos=paginated_videos, pagination=pagination, jobs_status=jobs_status_)
 
 @app.route('/video/<video_id>/', methods=['GET'])
 def video_page(video_id):

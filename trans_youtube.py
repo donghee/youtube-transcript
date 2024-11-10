@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-#pip install assemblyai yt_dlp anthropic nltk --user --break-system-packages
 
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from text_chunker import TextChunker
