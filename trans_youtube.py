@@ -105,7 +105,9 @@ def youtube_title2(video_id):
     if os.path.exists(transcript):
         # return first line of the transcript
         with open(transcript, 'r') as f:
-            return f.readline().split(' - ')[0]
+            delimeter = " - http"
+            title = f.readline().split(delimeter)[0]
+            return title
     return ""
 
 def youtube_transcript(URL):
