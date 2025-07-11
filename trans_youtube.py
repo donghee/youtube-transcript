@@ -181,6 +181,10 @@ def save_transcript(transcript, vid, title, language_code):
             _ = re.sub(r"\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}.\d{3}", "", _)
             _ = re.sub("\n\n", "", _)
             _ = re.sub("\n", " ", _)
+            # replace ```vtt\nWEBVTT header with a blank line
+            _ = re.sub(r"```", "", _)
+            _ = re.sub(r"vtt\nWEBVTT", "", _)
+
             translated_vtt = re.sub("WEBVTT", "", _)
             f.write(translated_vtt.lstrip())
 
