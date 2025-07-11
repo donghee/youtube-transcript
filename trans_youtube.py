@@ -9,6 +9,9 @@ import yt_dlp
 from tqdm import tqdm
 import re
 
+MODEL="claude-sonnet-4-20250514" # Claude Sonnet 4 model
+MAX_TOKENS=1024 # Max tokens for Claude Sonnet 4 model
+
 #  save_path = "/tmp"
 current_path = os.path.dirname(os.path.realpath(__file__))
 save_path = f"{current_path}/output"
@@ -36,8 +39,8 @@ def translate_ko(paragraphs):
             continue
         messages.append({"role": "user", "content": f"{paragraph}"})
         response = client.messages.create(
-            model="claude-3-5-sonnet-20240620",
-            max_tokens=1024,
+            model=MODEL,
+            max_tokens=MAX_TOKENS,
             system="당신은 유능한 AI 한국어 번역 어시스턴트입니다. 사용자의 질문에 대해 확인 없이 바로 간결하고 정확한 한국어 번역을 제공하세요. 불필요한 인사말이나 설명은 생략하고 핵심 정보만 전달하세요.",
             messages=messages
         )
@@ -71,8 +74,8 @@ def translate_vtt(vtt, language_code="ko"):
         for attempt in range(max_retries):
             try:
                 response = client.messages.create(
-                    model="claude-3-5-sonnet-20240620",
-                    max_tokens=1024,
+                    model=MODEL,
+                    max_tokens=MAX_TOKENS,
                     system=f"당신은 유능한 AI {target_language} 번역 어시스턴트입니다. vtt 자막 파일을 입력 받아서, 사용자의 질문에 대해 확인 없이 바로 간결하고 정확한 {target_language} vtt 자막 파일을 제공하세요. 불필요한 인사말이나 설명은 생략하고 핵심 정보만 전달하세요.",
                     messages=[{"role": "user", "content": f"{vtt}"}]
                 )
