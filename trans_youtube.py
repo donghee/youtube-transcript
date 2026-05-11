@@ -9,8 +9,10 @@ import yt_dlp
 from tqdm import tqdm
 import re
 
-MODEL="claude-sonnet-4-20250514" # Claude Sonnet 4 model
-MAX_TOKENS=1024 # Max tokens for Claude Sonnet 4 model
+#MODEL="claude-sonnet-4-20250514" # Claude Sonnet 4 model
+MODEL="claude-sonnet-4-6" # Claude Sonnet 4 model
+#MAX_TOKENS=1024 # Max tokens for Claude Sonnet 4 model
+MAX_TOKENS=1024*10 # Max tokens for Claude Sonnet 4.6 model
 
 #  save_path = "/tmp"
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -23,6 +25,7 @@ target_languages = {
     "es": "스페인어",
     "ja": "일본어",
     "zh": "중국어",
+    "ru": "러시아",
 }
 
 def chunk_text_to_paragraphs_semantic(text):
@@ -59,7 +62,8 @@ def translate_vtt(vtt, language_code="ko"):
     client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
     # TODO: optimize best request line size
-    lines_per_request = int(66/3)
+    #lines_per_request = int(66/3)
+    lines_per_request = int(66/3*10)
     vtts = []
     lines = vtt.split("\n\n")
     for i in range(0, len(lines), lines_per_request):
@@ -68,18 +72,32 @@ def translate_vtt(vtt, language_code="ko"):
     target_language = target_languages.get(language_code)
     print(f"Translate to {target_language}...")
 
+    # 토큰 사용량 추적
+    total_input_tokens = 0
+    total_output_tokens = 0
+
     translated_vtts = []
-    for vtt in tqdm(vtts, desc="Translating VTT"):
+    for idx, vtt in enumerate(tqdm(vtts, desc="Translating VTT"), 1):
         max_retries = 3
         for attempt in range(max_retries):
             try:
                 response = client.messages.create(
                     model=MODEL,
                     max_tokens=MAX_TOKENS,
-                    system=f"당신은 유능한 AI {target_language} 번역 어시스턴트입니다. vtt 자막 파일을 입력 받아서, 사용자의 질문에 대해 확인 없이 바로 간결하고 정확한 {target_language} vtt 자막 파일을 제공하세요. 불필요한 인사말이나 설명은 생략하고 핵심 정보만 전달하세요.",
+                    #  system=f"당신은 유능한 AI {target_language} 번역 어시스턴트입니다. vtt 자막 파일을 입력 받아서, 사용자의 질문에 대해 확인 없이 바로 간결하고 정확한 {target_language} vtt 자막 파일을 제공하세요. 불필요한 인사말이나 설명은 생략하고 핵심 정보만 전달하세요.",
+                    system=f"당신은 유능한 AI {target_language} 번역 어시스턴트입니다. vtt 자막 파일을 입력 받아서, 사용자의 질문에 대해 확인 없이 바로 간결하고 정확한 {target_language} vtt 자막 파일을 제공하세요. 불필요한 인사말이나 설명은 생략하고 핵심 정보만 전달하세요. VTT 형식과 타임스탬프는 그대로 유지하고 자막 텍스트만 번역하세요.",
                     messages=[{"role": "user", "content": f"{vtt}"}]
                 )
                 content = response.content[0].text
+
+                # 토큰 사용량 출력
+                input_tokens = response.usage.input_tokens
+                output_tokens = response.usage.output_tokens
+                total_input_tokens += input_tokens
+                total_output_tokens += output_tokens
+
+                print(f"\n[Chunk {idx}/{len(vtts)}] Input tokens: {input_tokens}, Output tokens: {output_tokens}")
+
                 translated_vtts.append(content)
                 break
             except Exception as e:
@@ -89,6 +107,15 @@ def translate_vtt(vtt, language_code="ko"):
                 else:
                     print(f"Failed to translate after {max_retries} attempts. Skipping this chunk.")
                     translated_vtts.append(vtt)  # 번역 실패 시 원본 텍스트 추가
+
+    # 전체 토큰 사용량 요약 출력
+    print(f"\n{'='*60}")
+    print(f"Translation Summary:")
+    print(f"  Total chunks: {len(vtts)}")
+    print(f"  Total input tokens: {total_input_tokens:,}")
+    print(f"  Total output tokens: {total_output_tokens:,}")
+    print(f"  Total tokens: {total_input_tokens + total_output_tokens:,}")
+    print(f"{'='*60}\n")
 
     return translated_vtts
 
@@ -169,7 +196,16 @@ def save_transcript(transcript, vid, title, language_code):
     print(f"translated subtitle lines: {len(translated_vtts)}")
     translated_vtt_filename = f"{save_path}/{vid}_translated.{language_code}.vtt"
     with open(translated_vtt_filename, "w") as f:
-        f.write("\n".join(translated_vtts))
+        # with filtering 'WEBVTT' and ```vtt 
+        f.write("WEBVTT\n\n")
+        for translated_vtt in translated_vtts:
+            _ = re.sub(r"```", "", translated_vtt)
+            _ = re.sub(r"vtt\nWEBVTT", "", _)
+            translated_vtt = re.sub(r"WEBVTT", "", _)
+            f.write(translated_vtt.lstrip())
+            f.write("\n")
+        # without filtering
+        #  f.write("\n".join(translated_vtts))
 
     # save the translated transcript to a file
     translated_filename = f"{save_path}/{vid}_translated.txt"
